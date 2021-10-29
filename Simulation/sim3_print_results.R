@@ -74,7 +74,7 @@ for (i in 1:7) {
   summary_results$eventrate$SD_CutOff_New[i] <- round(sd(results_eventrate[[i]]$CutOff_bio$New),3)
   
 }
-i <- 1
+
 for (i in 1:8) {
   nsim <- nrow(results_samplesize[[i]]$prob)
   summary_results$samplesize$p_C_BP_True[i] <- round(mean(results_samplesize[[i]]$prob$C_bp_True),3)
