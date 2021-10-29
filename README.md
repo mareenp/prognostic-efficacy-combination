@@ -1,4 +1,4 @@
-# prognostic-efficacy
+# prognostic-efficacy-combination
 R Code for the article "Performance evaluation of a new prognostic-efficacy-combination design in the context of telemedical interventions" by Mareen Pigorsch, Martin Möckel, Stefan Gehrig, Jan C. Wiemer, Friedrich Koehler and Geraldine Rauch
 
 * **What the project does:**
