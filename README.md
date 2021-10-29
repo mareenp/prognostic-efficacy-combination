@@ -14,4 +14,4 @@ Download the uploaded R-files and run "sim1_define_function.R" and "sim2_call_fu
 See the above-mentioned article.
 
 * **Who maintains and contributes to the project:**
-The code was written by Mareen Pigorsch and Stefan Gehrig.
+The code was written by Mareen Pigorsch, Stefan Gehrig and Geraldine Rauch.
