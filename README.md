@@ -8,7 +8,7 @@ This is the R code used for the simulations in the manuscript "Performance evalu
 The investigated design allows to define a biomarker cut-off and to perform a randomized controlled trial (RCT) in a biomarker-selected population within a single study. This methodological research work evaluates if a double use of the control group for biomarker cut-off definition and efficacy assessment within the RCT leads to biased treatment effect estimates. 
 
 * **How users can get started with the project:**
-Clone the repository and run "sim1_define_function.R" and "sim2_call_function_scenarios.R" for the simulations. The script "sim3_print_results.R" creates an overview and tables of the results, while "sim4_plot_bias.R" builds boxplots of the results.
+Clone the repository and run "sim1_define_function.R" and "sim2_call_function_scenarios.R" for the simulations. The script "sim3_print_results.R" creates an overview and tables of the results, while "sim4_plot_bias.R" creates a figure.
 
 * **Where users can get help with your project:**
 See the above mentioned article.
