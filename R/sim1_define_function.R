@@ -12,7 +12,6 @@ library(pROC)
 # n - number of cases per arm, N - total sample size
 # p_c - probability of events in control arm
 # p_i - probability of events in intervention arm
-
 ##### biomarker
 # meanlog_0 - meanlog of biomarker distribution in non-profiters
 # meanlog_1 - meanlog of biomarker distribution in potential profiters
@@ -28,18 +27,28 @@ library(pROC)
 # New - using Cut-Off from Control group (New design)
 # Ref - using Cut-Off from External sample (Reference design)
 
+
 simu <- function(n, p_c, p_i, meanlog_0, meanlog_1, sdlog_0, sdlog_1, sen, itnumber){
 N <- 2*n
+
+# matrix ind_matrix for generating random numbers for sampling Control into 
+# "Training" and "Test" for split sample method as additional comparator for new method
+set.seed(17082022)
+ind_matrix <- matrix(rep(seq(1,n), itnumber),ncol = n)
+for (i in 1:itnumber) {
+  ind_matrix[i,] <- sample(n, n)
+}
+
 # seed
 set.seed(242)
 
 ########################## save results into #########################################################
 #Biomarker Cut-Off)
-CutOff_bio <- tibble(True=rep(NA,itnumber), New=rep(NA,itnumber), Ref=rep(NA,itnumber)) 
-specificity <- tibble(C_True=rep(NA,itnumber), C_New=rep(NA,itnumber), C_Ref=rep(NA,itnumber),
-                      I_True=rep(NA,itnumber), I_New=rep(NA,itnumber), I_Ref=rep(NA,itnumber))
-sensitivity <- tibble(C_True=rep(NA,itnumber), C_New=rep(NA,itnumber), C_Ref=rep(NA,itnumber),
-                      I_True=rep(NA,itnumber), I_New=rep(NA,itnumber), I_Ref=rep(NA,itnumber))
+CutOff_bio <- tibble(True=rep(NA,itnumber), New=rep(NA,itnumber), Ref=rep(NA,itnumber), Split=rep(NA,itnumber)) 
+specificity <- tibble(C_True=rep(NA,itnumber), C_New=rep(NA,itnumber), C_Ref=rep(NA,itnumber), C_Split=rep(NA,itnumber),
+                      I_True=rep(NA,itnumber), I_New=rep(NA,itnumber), I_Ref=rep(NA,itnumber), I_Split=rep(NA,itnumber))
+sensitivity <- tibble(C_True=rep(NA,itnumber), C_New=rep(NA,itnumber), C_Ref=rep(NA,itnumber), C_Split=rep(NA,itnumber),
+                      I_True=rep(NA,itnumber), I_New=rep(NA,itnumber), I_Ref=rep(NA,itnumber), I_Split=rep(NA,itnumber))
 #estimated probabilities & treatment effect in the different biomarker-defined groups
 prob <- tibble(C_bn_True=rep(NA,itnumber), C_bp_True=rep(NA,itnumber), 
                I_bn_True=rep(NA,itnumber), I_bp_True=rep(NA,itnumber),
@@ -47,18 +56,24 @@ prob <- tibble(C_bn_True=rep(NA,itnumber), C_bp_True=rep(NA,itnumber),
                I_bn_New=rep(NA,itnumber), I_bp_New=rep(NA,itnumber),
                C_bn_Ref=rep(NA,itnumber), C_bp_Ref=rep(NA,itnumber), 
                I_bn_Ref=rep(NA,itnumber), I_bp_Ref=rep(NA,itnumber),
-               Treat_True=rep(NA,itnumber), Treat_New=rep(NA,itnumber), Treat_Ref=rep(NA,itnumber))
+               C_bn_Split=rep(NA,itnumber), C_bp_Split=rep(NA,itnumber), 
+               I_bn_Split=rep(NA,itnumber), I_bp_Split=rep(NA,itnumber),
+               Treat_True=rep(NA,itnumber), Treat_New=rep(NA,itnumber), 
+               Treat_Ref=rep(NA,itnumber), Treat_Split=rep(NA,itnumber))
 #groupsize of the groups that are defined due to the biomarker Cut-Offs
 groupsize <- tibble(C_bn_True=rep(NA,itnumber), C_bp_True=rep(NA,itnumber), 
                     I_bn_True=rep(NA,itnumber), I_bp_True=rep(NA,itnumber),
                     C_bn_New=rep(NA,itnumber), C_bp_New=rep(NA,itnumber), 
                     I_bn_New=rep(NA,itnumber), I_bp_New=rep(NA,itnumber),
                     C_bn_Ref=rep(NA,itnumber), C_bp_Ref=rep(NA,itnumber), 
-                    I_bn_Ref=rep(NA,itnumber), I_bp_Ref=rep(NA,itnumber))
+                    I_bn_Ref=rep(NA,itnumber), I_bp_Ref=rep(NA,itnumber),
+                    C_bn_Split=rep(NA,itnumber), C_bp_Split=rep(NA,itnumber), 
+                    I_bn_Split=rep(NA,itnumber), I_bp_Split=rep(NA,itnumber))
 
 ##############################################################################################################
 #########------------------------------- simulation -----------------------------------------#################
 ##############################################################################################################
+#i <-1
 for(i in 1:itnumber){
   if(i %% 100 == 0) cat("iteration", i, "of", itnumber,"\n")
   ##############################################################################################################
@@ -68,7 +83,7 @@ for(i in 1:itnumber){
 
   # study sample
   data <- tibble(event_exp=rep(-1,N), event_true=rep(-1,N), biomarker=rep(-1,N), group_i=rep(-1,N),
-                 bp_True=rep(-1,N), bp_New=rep(-1,N), bp_Ref=rep(-1,N))
+                 bp_True=rep(-1,N), bp_New=rep(-1,N), bp_Ref=rep(-1,N), bp_Split=rep(-1,N))
   # another sample for external biomarker study
   data_E <- tibble(event_exp=rep(-1,n), biomarker=rep(-1,n))
   
@@ -90,32 +105,49 @@ for(i in 1:itnumber){
   data_E$biomarker[data_E$event_exp==0] <- rlnorm(sum(data_E$event_exp==0), meanlog = meanlog_0, sdlog = sdlog_0)
   data_E$biomarker[data_E$event_exp==1] <- rlnorm(sum(data_E$event_exp==1), meanlog = meanlog_1, sdlog = sdlog_1) 
   
+  ####### Split Control 
+  # split Control into "Training" for cut-off definition 
+  # and "Test" for treatment estimation
+  ind <- ind_matrix[i,]
+  data$Split <- NA
+  data$Split[data$group_i==0][ind[1:(n/2)]] <- "Training"
+  data$Split[data$group_i==0][ind[(n/2+1):n]] <- "Test"
+  ### data_Test with all individuals from intervention, only "Test" individuals from Control
+  data_Test <- data[data$group_i==1 | data$Split=="Test",]
+ 
   ##########################################################################################
   ################ ROC: Cut-Off values in Control & Intervention ###########################
   roc_New <- roc(event_exp ~ biomarker, data = data, subset=(group_i==0), direction="<")
   roc_Ref <- roc(event_exp ~ biomarker, data = data_E, direction="<")
+  roc_Split <- roc(event_exp ~ biomarker, data = data, subset=(Split=="Training"), direction="<")
 
   ### biomarker Cut-Off for a sensitivity >=sen ######
-  # biomarker Cut-Off due to control arm (New design) -> used for both arm afterwards
+  # biomarker Cut-Off due to control arm (New design) -> used for both arms afterwards
   CutOff_bio$New[i] <- max(roc_New$thresholds[roc_New$sensitivities>=sen])
   # true calculated biomarker Cut-Off for comparison
   CutOff_bio$True[i] <- exp(qnorm(1-sen,mean=meanlog_1, sd=sdlog_1))
   # biomarker Cut-Off due to an external sample (Reference design) for comparison
   CutOff_bio$Ref[i] <- max(roc_Ref$thresholds[roc_Ref$sensitivities>=sen])
+  # biomarker Cut-Off due to sample split of control arm
+  CutOff_bio$Split[i] <- max(roc_Split$thresholds[roc_Split$sensitivities>=sen])
   ## specificity separate for control and for intervention 
   specificity$C_True[i] <- sum(data$event_exp==0 & data$biomarker<CutOff_bio$True[i] & data$group_i==0) / sum(data$event_exp==0 & data$group_i==0)
   specificity$C_New[i] <- sum(data$event_exp==0 & data$biomarker<CutOff_bio$New[i] & data$group_i==0) / sum(data$event_exp==0 & data$group_i==0)
   specificity$C_Ref[i] <- sum(data$event_exp==0 & data$biomarker<CutOff_bio$Ref[i] & data$group_i==0) / sum(data$event_exp==0 & data$group_i==0)
+  specificity$C_Split[i] <- sum(data_Test$event_exp==0 & data_Test$biomarker<CutOff_bio$Split[i] & data_Test$group_i==0) / sum(data_Test$event_exp==0 & data_Test$group_i==0)
   specificity$I_True[i] <- sum(data$event_exp==0 & data$biomarker<CutOff_bio$True[i] & data$group_i==1) / sum(data$event_exp==0 & data$group_i==1)
   specificity$I_New[i] <- sum(data$event_exp==0 & data$biomarker<CutOff_bio$New[i] & data$group_i==1) / sum(data$event_exp==0 & data$group_i==1)
   specificity$I_Ref[i] <- sum(data$event_exp==0 & data$biomarker<CutOff_bio$Ref[i] & data$group_i==1) / sum(data$event_exp==0 & data$group_i==1)
+  specificity$I_Split[i] <- sum(data_Test$event_exp==0 & data_Test$biomarker<CutOff_bio$Split[i] & data_Test$group_i==1) / sum(data_Test$event_exp==0 & data_Test$group_i==1)
   ## sensitivity separate for control and for intervention 
   sensitivity$C_True[i] <- sum(data$event_exp==1 & data$biomarker>=CutOff_bio$True[i] & data$group_i==0) / sum(data$event_exp==1 & data$group_i==0)
   sensitivity$C_New[i] <- sum(data$event_exp==1 & data$biomarker>=CutOff_bio$New[i] & data$group_i==0) / sum(data$event_exp==1 & data$group_i==0)
   sensitivity$C_Ref[i] <- sum(data$event_exp==1 & data$biomarker>=CutOff_bio$Ref[i] & data$group_i==0) / sum(data$event_exp==1 & data$group_i==0)
+  sensitivity$C_Split[i] <- sum(data_Test$event_exp==1 & data_Test$biomarker>=CutOff_bio$Split[i] & data_Test$group_i==0) / sum(data_Test$event_exp==1 & data_Test$group_i==0)
   sensitivity$I_True[i] <- sum(data$event_exp==1 & data$biomarker>=CutOff_bio$True[i] & data$group_i==1) / sum(data$event_exp==1 & data$group_i==1)
   sensitivity$I_New[i] <- sum(data$event_exp==1 & data$biomarker>=CutOff_bio$New[i] & data$group_i==1) / sum(data$event_exp==1 & data$group_i==1)
   sensitivity$I_Ref[i] <- sum(data$event_exp==1 & data$biomarker>=CutOff_bio$Ref[i] & data$group_i==1) / sum(data$event_exp==1 & data$group_i==1)
+  sensitivity$I_Split[i] <- sum(data_Test$event_exp==1 & data_Test$biomarker>=CutOff_bio$Split[i] & data_Test$group_i==1) / sum(data_Test$event_exp==1 & data_Test$group_i==1)
   ### Groupdefinition bp/bn due to the 3 Cut-Offs
   data$bp_True[data$biomarker>=CutOff_bio$True[i]] <- rep(1,sum(data$biomarker>=CutOff_bio$True[i]))
   data$bp_True[data$biomarker<CutOff_bio$True[i]] <- rep(0,sum(data$biomarker<CutOff_bio$True[i]))  
@@ -123,7 +155,8 @@ for(i in 1:itnumber){
   data$bp_New[data$biomarker<CutOff_bio$New[i]] <- rep(0,sum(data$biomarker<CutOff_bio$New[i]))
   data$bp_Ref[data$biomarker>=CutOff_bio$Ref[i]] <- rep(1,sum(data$biomarker>=CutOff_bio$Ref[i]))
   data$bp_Ref[data$biomarker<CutOff_bio$Ref[i]] <- rep(0,sum(data$biomarker<CutOff_bio$Ref[i]))
-  
+  data_Test$bp_Split[data_Test$biomarker>=CutOff_bio$Split[i]] <- rep(1,sum(data_Test$biomarker>=CutOff_bio$Split[i]))
+  data_Test$bp_Split[data_Test$biomarker<CutOff_bio$Split[i]] <- rep(0,sum(data_Test$biomarker<CutOff_bio$Split[i]))
   ### probability of events ##############################################################
   ## take biomarker Cut-Off defined due to new design for definition in C and I
   prob$C_bn_New[i] <- mean(data$event_true[data$group_i==0 & data$biomarker<CutOff_bio$New[i]])
@@ -140,11 +173,16 @@ for(i in 1:itnumber){
   prob$C_bp_Ref[i] <- mean(data$event_true[data$group_i==0 & data$biomarker>=CutOff_bio$Ref[i]]) 
   prob$I_bn_Ref[i] <- mean(data$event_true[data$group_i==1 & data$biomarker<CutOff_bio$Ref[i]])
   prob$I_bp_Ref[i] <- mean(data$event_true[data$group_i==1 & data$biomarker>=CutOff_bio$Ref[i]]) 
+  ## for comparison - using Cut-Off derived from Sample Split
+  prob$C_bn_Split[i] <- mean(data_Test$event_true[data_Test$group_i==0 & data_Test$biomarker<CutOff_bio$Split[i]])
+  prob$C_bp_Split[i] <- mean(data_Test$event_true[data_Test$group_i==0 & data_Test$biomarker>=CutOff_bio$Split[i]]) 
+  prob$I_bn_Split[i] <- mean(data_Test$event_true[data_Test$group_i==1 & data_Test$biomarker<CutOff_bio$Split[i]])
+  prob$I_bp_Split[i] <- mean(data_Test$event_true[data_Test$group_i==1 & data_Test$biomarker>=CutOff_bio$Split[i]]) 
   # Treatment effect
   prob$Treat_True[i] <- prob$C_bp_True[i] - prob$I_bp_True[i]
   prob$Treat_New[i] <- prob$C_bp_New[i] - prob$I_bp_New[i] 
   prob$Treat_Ref[i] <- prob$C_bp_Ref[i] - prob$I_bp_Ref[i] 
-  
+  prob$Treat_Split[i] <- prob$C_bp_Split[i] - prob$I_bp_Split[i] 
   ### groupsize of the defined biomarker positive & biomarker negative groups ######################
   groupsize$C_bn_New[i] <- length(data$event_true[data$group_i==0 & data$biomarker<CutOff_bio$New[i]]) 
   groupsize$C_bp_New[i] <- length(data$event_true[data$group_i==0 & data$biomarker>=CutOff_bio$New[i]])
@@ -160,6 +198,11 @@ for(i in 1:itnumber){
   groupsize$C_bp_Ref[i] <- length(data$event_true[data$group_i==0 & data$biomarker>=CutOff_bio$Ref[i]]) 
   groupsize$I_bn_Ref[i] <- length(data$event_true[data$group_i==1 & data$biomarker<CutOff_bio$Ref[i]])
   groupsize$I_bp_Ref[i] <- length(data$event_true[data$group_i==1 & data$biomarker>=CutOff_bio$Ref[i]])
+  ## with Cut-Off from sample split
+  groupsize$C_bn_Split[i] <- length(data_Test$event_true[data_Test$group_i==0 & data_Test$biomarker<CutOff_bio$Split[i]])
+  groupsize$C_bp_Split[i] <- length(data_Test$event_true[data_Test$group_i==0 & data_Test$biomarker>=CutOff_bio$Split[i]]) 
+  groupsize$I_bn_Split[i] <- length(data_Test$event_true[data_Test$group_i==1 & data_Test$biomarker<CutOff_bio$Split[i]])
+  groupsize$I_bp_Split[i] <- length(data_Test$event_true[data_Test$group_i==1 & data_Test$biomarker>=CutOff_bio$Split[i]])
 }
 result <- list(CutOff_bio=CutOff_bio, specificity=specificity, sensitivity=sensitivity, prob=prob, groupsize=groupsize)
 return(result)
