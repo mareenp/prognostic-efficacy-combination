@@ -3,10 +3,10 @@
 ##############################################################################################################
 ############################ Plot Bias for different scenarios ###############################################
 ##############################################################################################################
-load("results/results_biomarker.RData")
-load("results/results_eventrate.RData")
-load("results/results_samplesize.RData")
-load("results/results_sensitivity.RData")
+load("results_biomarker.RData")
+load("results_eventproportion.RData")
+load("results_samplesize.RData")
+load("results_sensitivity.RData")
 
 library(ggplot2)
 library(purrr)
@@ -16,24 +16,25 @@ library(patchwork)
 library(cowplot)
 
 results <- c(results_biomarker, 
-             results_eventrate,
+             results_eventproportion,
              results_samplesize, 
              results_sensitivity)
 
 names(results) <- c(paste(rep("(a) Biomarker", length(results_biomarker)), 1:length(results_biomarker), sep = "_"),
-                    paste(rep("(b) Event rate", length(results_eventrate)), 1:length(results_eventrate), sep = "_"),
+                    paste(rep("(b) Event proportion", length(results_eventproportion)), 1:length(results_eventproportion), sep = "_"),
                     paste(rep("(c) Sample size", length(results_samplesize)), 1:length(results_samplesize), sep = "_"),
                     paste(rep("(d) Sensitivity", length(results_sensitivity)), 1:length(results_sensitivity), sep = "_"))
 
 df <- map_dfr(results, .id = "condition", ~.x$prob) %>% 
-  pivot_longer(cols = c(Treat_New, Treat_Ref), names_to = "design", values_to = "estimate") %>% 
+  pivot_longer(cols = c(Treat_New, Treat_Split, Treat_Ref), names_to = "design", values_to = "estimate") %>% 
   mutate(Treat_dev = estimate-Treat_True) %>% 
-  mutate(design = ifelse(design == "Treat_Ref", "External biomarker study (Reference)", 
-                         "Prognostic-efficacy-combination design (New)")) %>% 
+  mutate(design = ifelse(design == "Treat_Split", "Split of control into training and test (Split)", 
+                      ifelse(design == "Treat_Ref", "External biomarker study (Reference)",
+                             "Prognostic-efficacy-combination design (New)"))) %>% 
   separate(condition, into = c("parameter", "condition"), sep = "_") %>% 
   mutate(condition = case_when(
     parameter == "(a) Biomarker" ~ paste0("Bio", condition),
-    parameter == "(b) Event rate" ~ paste0("Er", condition),
+    parameter == "(b) Event proportion" ~ paste0("Ep", condition),
     parameter == "(c) Sample size" ~ paste0("Sam", condition),
     TRUE ~ paste0("Sen", condition)
   ))
@@ -69,7 +70,7 @@ plots <- map(plots, ~.x + theme(panel.grid.major = element_line(linetype = "dash
                                 legend.position = "none",
                                 axis.text.x = element_text(angle = 45, hjust = 1)))
 
-tiff(filename = paste("results/plot_bias.tiff"), compression = "lzw+p",
+tiff(filename = paste("Plot_bias.tiff"), compression = "lzw+p",
      width = 5000, height = 5500, res = 650)
 (plots[[1]] | plots[[2]]) / 
   (plots[[3]] | plots[[4]]) / 
