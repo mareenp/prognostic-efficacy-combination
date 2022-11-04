@@ -1,5 +1,5 @@
 # prognostic-efficacy-combination
-R Code for the article "Performance evaluation of a new prognostic-efficacy-combination design in the context of telemedical interventions" by Mareen Pigorsch, Martin Möckel, Stefan Gehrig, Jan C. Wiemer, Friedrich Koehler and Geraldine Rauch
+R Code for the corresponding article: Pigorsch, M., Möckel, M., Gehrig, S., Wiemer, J. C., Koehler, F., & Rauch, G. (2022). Performance evaluation of a new prognostic‐efficacy‐combination design in the context of telemedical interventions. ESC Heart Failure. https://onlinelibrary.wiley.com/doi/full/10.1002/ehf2.14122
 
 * **What the project does:**
 This is the R code used for the simulations in the manuscript "Performance evaluation of a new prognostic-efficacy-combination design in the context of telemedical interventions".
