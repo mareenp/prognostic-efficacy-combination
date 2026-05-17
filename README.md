@@ -13,7 +13,7 @@ Clone the repository and run "sim1_define_function.R" and "sim2_call_function_sc
 The scripts "sim1b_define_function.R", "sim2b_call_function_scenarios.R" and "sim4b_plot_bias_CV.R" are updates including a resampling version of the prognostic-efficacy-combination design (New-CV).
 
 * **Where users can get help with your project:**
-See the above mentioned article. Contact mareen.pigorsch@charite.de for further questions.
+See the above mentioned article. For any questions or comments, please reach out to mareen.pigorsch@charite.de.
 
 * **Who maintains and contributes to the project:**
 The code was written by Mareen Pigorsch, Stefan Gehrig and Geraldine Rauch.
