@@ -6,7 +6,7 @@ This is the R code used for the simulations in the manuscript "Performance evalu
 It additionally includes code for a resampling version of the prognostic-efficacy-combination design using a 10-times 10-fold cross-validation. 
 
 * **Why the project is useful:**
-The investigated design allows to define a biomarker cut-off and to perform a randomized controlled trial (RCT) in a biomarker-selected population within a single study. This methodological research work evaluates if a double use of the control group for biomarker cut-off definition and efficacy assessment within the RCT leads to biased treatment effect estimates. The update shows that equipping the prognostic-efficacy-combination design with cross-validation reduces bias. An overview of the resutls is shown in Results/plot_bias_CV.png.
+The investigated design allows to define a biomarker cut-off and to perform a randomized controlled trial (RCT) in a biomarker-selected population within a single study. This methodological research work evaluates if a double use of the control group for biomarker cut-off definition and efficacy assessment within the RCT leads to biased treatment effect estimates. The update shows that equipping the prognostic-efficacy-combination design with cross-validation reduces bias. An overview of the resutls is shown in Results/Plot_bias_CV.png.
 
 * **How users can get started with the project:**
 Clone the repository and run "sim1_define_function.R" and "sim2_call_function_scenarios.R" for the simulations. The script "sim3_print_results.R" creates an overview and tables of the results, while "sim4_plot_bias.R" creates a figure.
